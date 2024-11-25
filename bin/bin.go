@@ -140,8 +140,9 @@ func LZRMain() {
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
-				fmt.Fprintln(os.Stderr, "Size of Hash table: :", unsafe.Sizeof(ipMeta))
-
+				if ipMeta.Count()%1234 == 0 {
+					fmt.Fprintln(os.Stderr, "Size of Hash table: :", unsafe.Sizeof(ipMeta))
+				}
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
 			}
