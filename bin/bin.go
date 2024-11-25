@@ -141,7 +141,9 @@ func LZRMain() {
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 				if ipMeta.Count()%1234 == 0 {
-					fmt.Fprintln(os.Stderr, "Size of Hash table: :", unsafe.Sizeof(ipMeta))
+					fmt.Fprintln(os.Stderr, "Size of writing queue:", unsafe.Sizeof(writingQueue))
+					fmt.Fprintln(os.Stderr, "Size of pcapIncoming queue:", unsafe.Sizeof(pcapIncoming))
+					fmt.Fprintln(os.Stderr, "Size of timeoutQueue queue:", unsafe.Sizeof(timeoutQueue))
 				}
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
