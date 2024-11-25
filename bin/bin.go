@@ -148,7 +148,7 @@ func LZRMain() {
 	//read from timeout
 	for i := 0; i < options.Workers; i++ {
 		go func(i int) {
-
+			fmt.Fprintln(os.Stderr, "Timeout function")
 			for input := range timeoutIncoming {
 				inMap, startProcessing := ipMeta.IsStartProcessing(input)
 				//if another thread is processing, put input back
@@ -160,6 +160,7 @@ func LZRMain() {
 					timeoutIncoming <- input
 					continue
 				}
+				fmt.Fprintln(os.Stderr, "Handle timeout")
 				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 			}
