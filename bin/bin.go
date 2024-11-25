@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"sync"
-	"unsafe"
 
 	"github.com/stanford-esrg/lzr"
 )
@@ -141,9 +141,9 @@ func LZRMain() {
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 				if ipMeta.Count()%1234 == 0 {
-					fmt.Fprintln(os.Stderr, "Size of writing queue:", unsafe.Sizeof(writingQueue))
-					fmt.Fprintln(os.Stderr, "Size of pcapIncoming queue:", unsafe.Sizeof(pcapIncoming))
-					fmt.Fprintln(os.Stderr, "Size of timeoutQueue queue:", unsafe.Sizeof(timeoutQueue))
+					var m runtime.MemStats
+					runtime.ReadMemStats(&m)
+					fmt.Fprintln(os.Stderr, "Size of timeoutQueue queue:", m.Alloc/1024)
 				}
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
