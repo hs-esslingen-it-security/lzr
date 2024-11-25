@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime/pprof"
 	"sync"
+	"unsafe"
 
 	"github.com/stanford-esrg/lzr"
 )
@@ -139,6 +140,8 @@ func LZRMain() {
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
+				fmt.Fprintln(os.Stderr, "Size of Hash table: :", unsafe.Sizeof(ipMeta))
+
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
 			}
@@ -148,7 +151,7 @@ func LZRMain() {
 	//read from timeout
 	for i := 0; i < options.Workers; i++ {
 		go func(i int) {
-			fmt.Fprintln(os.Stderr, "Timeout function")
+			//fmt.Fprintln(os.Stderr, "Timeout function")
 			for input := range timeoutIncoming {
 				inMap, startProcessing := ipMeta.IsStartProcessing(input)
 				//if another thread is processing, put input back

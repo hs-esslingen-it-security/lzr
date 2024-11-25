@@ -15,11 +15,6 @@ limitations under the License.
 */
 package lzr
 
-import (
-	"fmt"
-	"os"
-)
-
 func handleExpired(opts *options, packet *packet_metadata, ipMeta *pState,
 	timeoutQueue chan *packet_metadata, writingQueue chan *packet_metadata) {
 
@@ -56,12 +51,12 @@ func handleExpired(opts *options, packet *packet_metadata, ipMeta *pState,
 			}
 
 		}
-		fmt.Fprintln(os.Stderr, "Remove timeout packet")
+		//fmt.Fprintln(os.Stderr, "Remove timeout packet")
 		//remove from state, we are done now
 		ipMeta.remove(packet)
 		if HyperACKtiveFiltering() {
 			packet.HyperACKtive = true
-			fmt.Fprintln(os.Stderr, "Remove timeout packet with HyperACKtive")
+			//fmt.Fprintln(os.Stderr, "Remove timeout packet with HyperACKtive")
 			ipMeta.remove(packet)
 		}
 	} else { // lets try another handshake
