@@ -1,17 +1,27 @@
 package bin
 
 import (
+	"bytes"
+	"encoding/gob"
 	"time"
+
 	//"context"
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"runtime/pprof"
 	"sync"
 
 	"github.com/stanford-esrg/lzr"
 )
+
+func getRealSizeOf(v interface{}) (int, error) {
+	b := new(bytes.Buffer)
+	if err := gob.NewEncoder(b).Encode(v); err != nil {
+		return 0, err
+	}
+	return b.Len(), nil
+}
 
 func LZRMain() {
 	// create a context that can be cancelled
@@ -141,9 +151,10 @@ func LZRMain() {
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 				if ipMeta.Count()%1234 == 0 {
-					var m runtime.MemStats
-					runtime.ReadMemStats(&m)
-					fmt.Fprintln(os.Stderr, "Size of timeoutQueue queue:", m.Alloc/1024)
+					result, e := getRealSizeOf(ipMeta)
+					if e == nil {
+						fmt.Fprintln(os.Stderr, "Size of map:", result)
+					}
 				}
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
