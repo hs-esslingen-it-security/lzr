@@ -152,7 +152,6 @@ func LZRMain() {
 				ipMeta.FinishProcessing(input)
 				if ipMeta.Count()%1234 == 0 {
 					fmt.Fprintln(os.Stderr, "Count ipMeta:", ipMeta.Count())
-					ipMeta = lzr.CopyMap(ipMeta, options)
 				}
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
