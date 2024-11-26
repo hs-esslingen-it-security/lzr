@@ -49,6 +49,17 @@ func concatenateBits(a uint, b uint) uint {
 	return combined
 }
 
+func CopyMap(ipMeta *myCsMap, options *options) *myCsMap {
+	ipMetatmp := ConstructPacketStateMap(options)
+	ipMeta.Range(func(key uint, value *packet_state) (stop bool) {
+		ipMetatmp.Store(key, value)
+		return false
+	})
+	ipMeta = nil
+	ipMeta = ipMetatmp
+	return ipMeta
+}
+
 func constructKey(packet *packet_metadata) uint {
 	ip, e := strconv.Atoi(packet.Saddr)
 	if e == nil {

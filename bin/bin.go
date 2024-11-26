@@ -151,10 +151,8 @@ func LZRMain() {
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 				if ipMeta.Count()%1234 == 0 {
-					result, e := getRealSizeOf(ipMeta)
-					if e == nil {
-						fmt.Fprintln(os.Stderr, "Size of map:", result)
-					}
+					fmt.Fprintln(os.Stderr, "Count ipMeta:", ipMeta.Count())
+					ipMeta = lzr.CopyMap(ipMeta, options)
 				}
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
