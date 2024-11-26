@@ -19,15 +19,24 @@ import (
 	"fmt"
 	"math/bits"
 	"strconv"
+
+	csmap "github.com/mhmtszr/concurrent-swiss-map"
 )
+
+type myCsMap struct {
+	csmap.CsMap[uint, *packet_state]
+}
 
 /* keeps state by storing the packet that was received
  * and within the packet stores the expected response.
  * storing received as to what was sent b/c want to know
  * perhaps need to wait some more
  */
-func ConstructPacketStateMap(opts *options) pState {
-	ipMeta := NewpState()
+func ConstructPacketStateMap(opts *options) *myCsMap {
+	ipMeta := &myCsMap{*csmap.Create[uint, *packet_state](
+		// set the number of map shards. the default value is 32.
+		csmap.WithShardCount[uint, *packet_state](4096),
+	)}
 	return ipMeta
 }
 
@@ -57,26 +66,26 @@ func constructParentKey(packet *packet_metadata, parentSport int) uint {
 	return 0
 }
 
-func (ipMeta *pState) metaContains(p *packet_metadata) bool {
+func (ipMeta *myCsMap) metaContains(p *packet_metadata) bool {
 
 	pKey := constructKey(p)
 	return ipMeta.Has(pKey)
 
 }
 
-func (ipMeta *pState) find(p *packet_metadata) (*packet_metadata, bool) {
+func (ipMeta *myCsMap) find(p *packet_metadata) (*packet_metadata, bool) {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.Packet, ok
 	}
 	return nil, ok
 }
 
-func (ipMeta *pState) update(p *packet_metadata) {
+func (ipMeta *myCsMap) update(p *packet_metadata) {
 
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if !ok {
 		ps = &packet_state{
 			Packet:       p,
@@ -86,111 +95,111 @@ func (ipMeta *pState) update(p *packet_metadata) {
 	} else {
 		ps.Packet = p
 	}
-	ipMeta.Insert(pKey, ps)
+	ipMeta.Store(pKey, ps)
 }
 
-func (ipMeta *pState) incHandshake(p *packet_metadata) bool {
+func (ipMeta *myCsMap) incHandshake(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.HandshakeNum += 1
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 }
 
-func (ipMeta *pState) updateAck(p *packet_metadata) bool {
+func (ipMeta *myCsMap) updateAck(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.Ack = true
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 }
 
-func (ipMeta *pState) getAck(p *packet_metadata) bool {
+func (ipMeta *myCsMap) getAck(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.Ack
 	}
 	return false
 }
 
-func (ipMeta *pState) incEphemeralResp(p *packet_metadata, sport int) bool {
+func (ipMeta *myCsMap) incEphemeralResp(p *packet_metadata, sport int) bool {
 	pKey := constructParentKey(p, sport)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.EphemeralRespNum += 1
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 }
 
-func (ipMeta *pState) getEphemeralRespNum(p *packet_metadata) int {
+func (ipMeta *myCsMap) getEphemeralRespNum(p *packet_metadata) int {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.EphemeralRespNum
 	}
 	return 0
 }
 
-func (ipMeta *pState) getHyperACKtiveStatus(p *packet_metadata) bool {
+func (ipMeta *myCsMap) getHyperACKtiveStatus(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.HyperACKtive
 	}
 	return false
 }
 
-func (ipMeta *pState) setHyperACKtiveStatus(p *packet_metadata) bool {
+func (ipMeta *myCsMap) setHyperACKtiveStatus(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.HyperACKtive = true
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 }
 
-func (ipMeta *pState) setParentSport(p *packet_metadata, sport int) bool {
+func (ipMeta *myCsMap) setParentSport(p *packet_metadata, sport int) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.ParentSport = sport
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 }
 
-func (ipMeta *pState) getParentSport(p *packet_metadata) int {
+func (ipMeta *myCsMap) getParentSport(p *packet_metadata) int {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.ParentSport
 	}
 	return 0
 }
 
-func (ipMeta *pState) recordEphemeral(p *packet_metadata, ephemerals []packet_metadata) bool {
+func (ipMeta *myCsMap) recordEphemeral(p *packet_metadata, ephemerals []packet_metadata) bool {
 
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.EphemeralFilters = append(ps.EphemeralFilters, ephemerals...)
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 
 }
 
-func (ipMeta *pState) getEphemeralFilters(p *packet_metadata) ([]packet_metadata, bool) {
+func (ipMeta *myCsMap) getEphemeralFilters(p *packet_metadata) ([]packet_metadata, bool) {
 
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.EphemeralFilters, ok
 	}
@@ -198,51 +207,51 @@ func (ipMeta *pState) getEphemeralFilters(p *packet_metadata) ([]packet_metadata
 
 }
 
-func (ipMeta *pState) updateData(p *packet_metadata) bool {
+func (ipMeta *myCsMap) updateData(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		ps.Data = true
-		ipMeta.Insert(pKey, ps)
+		ipMeta.Store(pKey, ps)
 	}
 	return ok
 }
 
-func (ipMeta *pState) getData(p *packet_metadata) bool {
+func (ipMeta *myCsMap) getData(p *packet_metadata) bool {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.Data
 	}
 	return false
 }
 
-func (ipMeta *pState) getHandshake(p *packet_metadata) int {
+func (ipMeta *myCsMap) getHandshake(p *packet_metadata) int {
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if ok {
 		return ps.HandshakeNum
 	}
 	return 0
 }
 
-func (ipMeta *pState) incrementCounter(p *packet_metadata) bool {
+func (ipMeta *myCsMap) incrementCounter(p *packet_metadata) bool {
 
 	pKey := constructKey(p)
-	ps, ok := ipMeta.Get(pKey)
+	ps, ok := ipMeta.Load(pKey)
 	if !ok {
 		return false
 	}
 	ps.Packet.incrementCounter()
-	ipMeta.Insert(pKey, ps)
+	ipMeta.Store(pKey, ps)
 	return true
 
 }
 
-func (ipMeta *pState) remove(packet *packet_metadata) *packet_metadata {
+func (ipMeta *myCsMap) remove(packet *packet_metadata) *packet_metadata {
 	packet.ACKed = ipMeta.getAck(packet)
 	packetKey := constructKey(packet)
-	ipMeta.Remove(packetKey)
+	ipMeta.Delete(packetKey)
 	return packet
 }
 
@@ -269,11 +278,11 @@ func verifySA(pMap *packet_metadata, pRecv *packet_metadata) bool {
 
 // TODO: eventually remove the act of updating packet with hyperactive flag to
 // another packet func
-func (ipMeta *pState) verifyScanningIP(pRecv *packet_metadata) bool {
+func (ipMeta *myCsMap) verifyScanningIP(pRecv *packet_metadata) bool {
 
 	pRecvKey := constructKey(pRecv)
 	//first check that IP itself is being scanned
-	ps, ok := ipMeta.Get(pRecvKey)
+	ps, ok := ipMeta.Load(pRecvKey)
 	if !ok {
 		return false
 	}

@@ -56,7 +56,7 @@ func LZRMain() {
 	timeoutQueue := lzr.ConstructTimeoutQueue(options.Workers)
 	retransmitQueue := lzr.ConstructRetransmitQueue(options.Workers)
 	timeoutIncoming := lzr.PollTimeoutRoutine(
-		&ipMeta, timeoutQueue, retransmitQueue, options.Workers, options.Timeout, options.RetransmitSec)
+		ipMeta, timeoutQueue, retransmitQueue, options.Workers, options.Timeout, options.RetransmitSec)
 	incoming := lzr.ConstructIncomingRoutine(options.Workers)
 	var incomingDone sync.WaitGroup
 	incomingDone.Add(options.Workers)
@@ -119,10 +119,10 @@ func LZRMain() {
 				if lzr.ReadZMap() {
 					toACK := true
 					toPUSH := false
-					lzr.SendAck(options, input, &ipMeta, timeoutQueue,
+					lzr.SendAck(options, input, ipMeta, timeoutQueue,
 						retransmitQueue, writingQueue, toACK, toPUSH, lzr.ACK)
 				} else {
-					lzr.SendSyn(input, &ipMeta, timeoutQueue)
+					lzr.SendSyn(input, ipMeta, timeoutQueue)
 				}
 				ipMeta.FinishProcessing(input)
 			}
@@ -147,7 +147,7 @@ func LZRMain() {
 					pcapIncoming <- input
 					continue
 				}
-				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
+				lzr.HandlePcap(options, input, ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 				if ipMeta.Count()%1234 == 0 {
@@ -177,7 +177,7 @@ func LZRMain() {
 					timeoutIncoming <- input
 					continue
 				}
-				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue, writingQueue)
+				lzr.HandleTimeout(options, input, ipMeta, timeoutQueue, retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 			}
 		}(i)

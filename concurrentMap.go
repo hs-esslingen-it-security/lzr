@@ -20,153 +20,51 @@ which is licensed under the MIT license (Copyright (c) 2014 streamrail)
 
 package lzr
 
-import (
-	"sync"
-	//"fmt"
-	//"os"
-)
+//"fmt"
+//"os"
 
 var SHARD_COUNT = 4096
 
-// A "thread" safe map of type uint:Anything.
-// To avoid lock bottlenecks this map is dived to several (SHARD_COUNT) map shards.
-type pState []*pStateShared
-
-// A "thread" safe uint to anything map.
-type pStateShared struct {
-	items        map[uint]*packet_state
-	sync.RWMutex // Read Write mutex, guards access to internal map.
-}
-
-// Creates a new concurrent map.
-func NewpState() pState {
-	m := make(pState, SHARD_COUNT)
-	for i := 0; i < SHARD_COUNT; i++ {
-		m[i] = &pStateShared{items: make(map[uint]*packet_state)}
-	}
-	return m
-}
-
-// GetShard returns shard under given key
-func (m pState) GetShard(key uint) *pStateShared {
-	return m[key%uint(SHARD_COUNT)]
-}
-
-// Insert or Update - updates existing element or inserts a new one using UpsertCb
-func (m pState) Insert(key uint, p *packet_state) {
-	shard := m.GetShard(key)
-	shard.Lock()
-
-	shard.items[key] = p
-	shard.Unlock()
-}
-
-// Get retrieves an element from map under given key.
-func (m pState) Get(key uint) (*packet_state, bool) {
-	// Get shard
-	shard := m.GetShard(key)
-	shard.RLock()
-	// Get item from shard.
-	pstate, ok := shard.items[key]
-	shard.RUnlock()
-	return pstate, ok
-}
-
-// Count returns the number of elements within the map.
-func (m pState) Count() int {
-	count := 0
-	for i := 0; i < SHARD_COUNT; i++ {
-		shard := m[i]
-		shard.RLock()
-		count += len(shard.items)
-		/*if len(shard.items) != 0{
-			fmt.Fprintln(os.Stderr,shard.items)
-		}*/
-		shard.RUnlock()
-	}
-	return count
-}
-
-// IsEmpty checks if map is empty.
-func (m pState) IsEmpty() bool {
-	return m.Count() == 0
-}
-
-// Looks up an item under specified key
-func (m pState) Has(key uint) bool {
-	// Get shard
-	shard := m.GetShard(key)
-	shard.RLock()
-	// See if element is within shard.
-	_, ok := shard.items[key]
-	shard.RUnlock()
-	return ok
-}
-
-// Remove removes an element from the map.
-func (m pState) Remove(key uint) {
-	// Try to get shard.
-	shard := m.GetShard(key)
-	shard.Lock()
-	delete(shard.items, key)
-	shard.Unlock()
-}
-
 /* FOR PACKET_METADATA */
 //is Processing for goPackets
-func (m pState) IsStartProcessing(p *packet_metadata) (bool, bool) {
+func (m myCsMap) IsStartProcessing(p *packet_metadata) (bool, bool) {
 	// Get shard
 	pKey := constructKey(p)
-	shard := m.GetShard(pKey)
-	shard.Lock()
-	// Get item from shard.
-	p_out, ok := shard.items[pKey]
+	p_out, ok := m.Load(pKey)
+
 	if !ok {
-		shard.Unlock()
 		return false, false
 	}
 	if !p_out.Packet.Processing {
 		p_out.Packet.startProcessing()
-		shard.Unlock()
 		return true, true
 	}
-	shard.Unlock()
 	return true, false
 
 }
 
-func (m pState) StartProcessing(p *packet_metadata) bool {
+func (m myCsMap) StartProcessing(p *packet_metadata) bool {
 
 	// Get shard
 	pKey := constructKey(p)
-	shard := m.GetShard(pKey)
-	shard.RLock()
-	// See if element is within shard.
-	p_out, ok := shard.items[pKey]
+	p_out, ok := m.Load(pKey)
 	if !ok {
-		shard.RUnlock()
 		return false
 	}
 	p_out.Packet.startProcessing()
-	shard.RUnlock()
 	return ok
 
 }
 
-func (m pState) FinishProcessing(p *packet_metadata) bool {
+func (m myCsMap) FinishProcessing(p *packet_metadata) bool {
 
 	// Get shard
 	pKey := constructKey(p)
-	shard := m.GetShard(pKey)
-	shard.Lock()
-	// See if element is within shard.
-	p_out, ok := shard.items[pKey]
+	p_out, ok := m.Load(pKey)
 	if !ok {
-		shard.Unlock()
 		return false
 	}
 	p_out.Packet.finishedProcessing()
-	shard.Unlock()
 	return ok
 
 }

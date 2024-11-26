@@ -15,7 +15,7 @@ limitations under the License.
 */
 package lzr
 
-func handleExpired(opts *options, packet *packet_metadata, ipMeta *pState,
+func handleExpired(opts *options, packet *packet_metadata, ipMeta *myCsMap,
 	timeoutQueue chan *packet_metadata, writingQueue chan *packet_metadata) {
 
 	// first close the existing connection unless
