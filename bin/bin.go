@@ -102,7 +102,7 @@ func LZRMain() {
 					fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
 				}
 			}
-
+			fmt.Fprintln(os.Stderr, "ExitCondition ipMeta count:", ipMeta.Count())
 			for input := range incoming {
 				//fmt.Fprintln(os.Stderr, "for incomings ipMeta count:", ipMeta.Count())
 				if lzr.ReadZMap() {
