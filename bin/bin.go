@@ -108,6 +108,9 @@ func LZRMain() {
 				if lzr.ReadZMap() {
 					toACK := true
 					toPUSH := false
+					if ipMeta.Count()%1234 == 0 {
+						fmt.Fprintln(os.Stderr, "Read ZMap ipMeta count:", ipMeta.Count())
+					}
 					lzr.SendAck(options, input, &ipMeta, timeoutQueue,
 						retransmitQueue, writingQueue, toACK, toPUSH, lzr.ACK)
 				} else {
@@ -136,6 +139,9 @@ func LZRMain() {
 					pcapIncoming <- input
 					continue
 				}
+				if ipMeta.Count()%1234 == 0 {
+					fmt.Fprintln(os.Stderr, "pcap ipMeta count:", ipMeta.Count())
+				}
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
@@ -159,6 +165,9 @@ func LZRMain() {
 				if !startProcessing {
 					timeoutIncoming <- input
 					continue
+				}
+				if ipMeta.Count()%1234 == 0 {
+					fmt.Fprintln(os.Stderr, "timeout ipMeta count:", ipMeta.Count())
 				}
 				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
