@@ -108,15 +108,15 @@ func LZRMain() {
 				if lzr.ReadZMap() {
 					toACK := true
 					toPUSH := false
-					if ipMeta.Count()%1234 == 0 {
-						fmt.Fprintln(os.Stderr, "Read ZMap ipMeta count:", ipMeta.Count())
-					}
 					lzr.SendAck(options, input, &ipMeta, timeoutQueue,
 						retransmitQueue, writingQueue, toACK, toPUSH, lzr.ACK)
 				} else {
 					lzr.SendSyn(input, &ipMeta, timeoutQueue)
 				}
 				ipMeta.FinishProcessing(input)
+			}
+			if ipMeta.Count()%1234 == 0 {
+				fmt.Fprintln(os.Stderr, "Read ZMap ipMeta count:", ipMeta.Count())
 			}
 			incomingDone.Done()
 			return
