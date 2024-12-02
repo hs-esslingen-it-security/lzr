@@ -4,9 +4,7 @@ import (
 	"time"
 	//"context"
 	"fmt"
-	"log"
 	"os"
-	"runtime/pprof"
 	"sync"
 
 	"github.com/stanford-esrg/lzr"
@@ -25,19 +23,19 @@ func LZRMain() {
 		return
 	}
 
-	//For CPUProfiling
-	if options.CPUProfile != "" {
-		f, err := os.Create(options.CPUProfile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
+	// //For CPUProfiling
+	// if options.CPUProfile != "" {
+	// 	f, err := os.Create(options.CPUProfile)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	pprof.StartCPUProfile(f)
+	// 	defer pprof.StopCPUProfile()
+	// }
 
 	//initalize
 	ipMeta := lzr.ConstructPacketStateMap(options)
-	f := lzr.InitFile(options.Filename)
+	//f := lzr.InitFile(options.Filename)
 	lzr.InitParams()
 
 	writingQueue := lzr.ConstructWritingQueue(options.Workers)
@@ -53,16 +51,17 @@ func LZRMain() {
 	writing := false
 
 	// record to file
-	go func() {
-		for {
-			select {
-			case input := <-writingQueue:
-				writing = true
-				f.Record(input, options.Handshakes)
-				writing = false
-			}
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case input := <-writingQueue:
+	// 			writing = true
+	// 			f.Record(input, options.Handshakes)
+	// 			writing = false
+	// 		}
+	// 	}
+	// }()
+
 	//start all workers
 
 	//read from zmap
@@ -115,9 +114,6 @@ func LZRMain() {
 				}
 				ipMeta.FinishProcessing(input)
 			}
-			if ipMeta.Count()%1234 == 0 {
-				fmt.Fprintln(os.Stderr, "Read ZMap ipMeta count:", ipMeta.Count())
-			}
 			incomingDone.Done()
 			return
 		}(i)
@@ -138,9 +134,6 @@ func LZRMain() {
 				if !startProcessing {
 					pcapIncoming <- input
 					continue
-				}
-				if ipMeta.Count()%1234 == 0 {
-					fmt.Fprintln(os.Stderr, "pcap ipMeta count:", ipMeta.Count())
 				}
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
@@ -166,9 +159,6 @@ func LZRMain() {
 					timeoutIncoming <- input
 					continue
 				}
-				if ipMeta.Count()%1234 == 0 {
-					fmt.Fprintln(os.Stderr, "timeout ipMeta count:", ipMeta.Count())
-				}
 				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 			}
@@ -180,16 +170,16 @@ func LZRMain() {
 
 	for {
 		if done && len(writingQueue) == 0 && !writing {
-			if options.MemProfile != "" {
-				f, err := os.Create(options.MemProfile)
-				if err != nil {
-					log.Fatal(err)
-				}
-				pprof.WriteHeapProfile(f)
-				f.Close()
-			}
-			//closing file
-			f.F.Flush()
+			// if options.MemProfile != "" {
+			// 	f, err := os.Create(options.MemProfile)
+			// 	if err != nil {
+			// 		log.Fatal(err)
+			// 	}
+			// 	pprof.WriteHeapProfile(f)
+			// 	f.Close()
+			// }
+			// //closing file
+			// f.F.Flush()
 			t := time.Now()
 			elapsed := t.Sub(start)
 			lzr.Summarize(elapsed)
