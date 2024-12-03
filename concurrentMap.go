@@ -47,6 +47,21 @@ func NewpState() pState {
 	return m
 }
 
+// Erweiterung: Erlaubt eine Reallocation der inneren Maps (z.B. durch Vergrößerung der Kapazität)
+func ReallocateState(m pState) pState {
+	newMap := make(pState, SHARD_COUNT)
+	for i := 0; i < SHARD_COUNT; i++ {
+		// Erstelle einen neuen shared Zustand mit neuer Kapazität für jedes Shard
+		newMap[i] = &pStateShared{items: make(map[uint]*packet_state)}
+
+		// Kopiere die bestehenden Elemente aus der alten Map (optional)
+		for key, value := range m[i].items {
+			newMap[i].items[key] = value
+		}
+	}
+	return newMap
+}
+
 // GetShard returns shard under given key
 func (m pState) GetShard(key uint) *pStateShared {
 	return m[key%uint(SHARD_COUNT)]

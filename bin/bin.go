@@ -38,7 +38,7 @@ func LZRMain() {
 	//f := lzr.InitFile(options.Filename)
 	lzr.InitParams()
 
-	writingQueue := lzr.ConstructWritingQueue(options.Workers)
+	//writingQueue := lzr.ConstructWritingQueue(options.Workers)
 	pcapIncoming := lzr.ConstructPcapRoutine(options.Workers)
 	timeoutQueue := lzr.ConstructTimeoutQueue(options.Workers)
 	retransmitQueue := lzr.ConstructRetransmitQueue(options.Workers)
@@ -108,12 +108,16 @@ func LZRMain() {
 					toACK := true
 					toPUSH := false
 					lzr.SendAck(options, input, &ipMeta, timeoutQueue,
-						retransmitQueue, writingQueue, toACK, toPUSH, lzr.ACK)
+						retransmitQueue, toACK, toPUSH, lzr.ACK)
 				} else {
 					lzr.SendSyn(input, &ipMeta, timeoutQueue)
 				}
 				ipMeta.FinishProcessing(input)
 			}
+
+			ipMetaTmp := lzr.ReallocateState(ipMeta)
+			ipMeta = nil
+			ipMeta = ipMetaTmp
 			incomingDone.Done()
 			return
 		}(i)
@@ -136,11 +140,14 @@ func LZRMain() {
 					continue
 				}
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
-					retransmitQueue, writingQueue)
+					retransmitQueue)
 				ipMeta.FinishProcessing(input)
 				//fmt.Println("finished pcap:")
 				//fmt.Println(input)
 			}
+			ipMetaTmp := lzr.ReallocateState(ipMeta)
+			ipMeta = nil
+			ipMeta = ipMetaTmp
 		}(i)
 	}
 
@@ -159,7 +166,7 @@ func LZRMain() {
 					timeoutIncoming <- input
 					continue
 				}
-				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue, writingQueue)
+				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue)
 				ipMeta.FinishProcessing(input)
 			}
 		}(i)
@@ -169,7 +176,7 @@ func LZRMain() {
 	incomingDone.Wait()
 
 	for {
-		if done && len(writingQueue) == 0 && !writing {
+		if done && !writing {
 			// if options.MemProfile != "" {
 			// 	f, err := os.Create(options.MemProfile)
 			// 	if err != nil {
