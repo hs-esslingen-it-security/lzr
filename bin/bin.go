@@ -58,12 +58,20 @@ func LZRMain() {
 			select {
 			case input := <-writingQueue:
 				writing = true
-				fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
 				f.Record(input, options.Handshakes)
 				writing = false
 			}
 		}
 	}()
+
+	// print interesting debug values
+	go func() {
+		fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
+		fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
+		fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
+
+	}()
+
 	//start all workers
 
 	//read from zmap
@@ -136,8 +144,6 @@ func LZRMain() {
 					continue
 				}
 
-				fmt.Fprintln(os.Stderr, "Count ipMeta in pcapRead:", ipMeta.Count())
-
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
@@ -162,7 +168,6 @@ func LZRMain() {
 					timeoutIncoming <- input
 					continue
 				}
-				fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
 				lzr.HandleTimeout(options, input, &ipMeta, timeoutQueue, retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
 			}
