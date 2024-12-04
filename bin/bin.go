@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime/pprof"
 	"sync"
+	"unsafe"
 
 	"github.com/stanford-esrg/lzr"
 )
@@ -74,6 +75,7 @@ func LZRMain() {
 			case <-ticker.C:
 				fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
 				fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
+				fmt.Fprintln(os.Stderr, "Size of Map:", unsafe.Sizeof(ipMeta))
 				fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
 			}
 		}
