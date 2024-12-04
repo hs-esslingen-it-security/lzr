@@ -135,6 +135,9 @@ func LZRMain() {
 					pcapIncoming <- input
 					continue
 				}
+				if ipMeta.Count()%1234 == 0 {
+					fmt.Fprintln(os.Stderr, "Count ipMeta in pcapRead:", ipMeta.Count())
+				}
 				lzr.HandlePcap(options, input, &ipMeta, timeoutQueue,
 					retransmitQueue, writingQueue)
 				ipMeta.FinishProcessing(input)
