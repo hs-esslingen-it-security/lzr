@@ -66,10 +66,11 @@ func LZRMain() {
 
 	// print interesting debug values
 	go func() {
-		fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
-		fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
-		fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
-
+		for {
+			fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
+			fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
+			fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
+		}
 	}()
 
 	//start all workers
