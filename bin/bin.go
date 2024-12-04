@@ -66,10 +66,16 @@ func LZRMain() {
 
 	// print interesting debug values
 	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
 		for {
-			fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
-			fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
-			fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
+			select {
+			case <-ticker.C:
+				fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
+				fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
+				fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
+			}
 		}
 	}()
 
