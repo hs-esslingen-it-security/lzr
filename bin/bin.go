@@ -1,14 +1,15 @@
 package bin
 
 import (
+	"sync"
 	"time"
 	//"context"
 	"fmt"
 	"log"
 	"os"
 	"runtime/pprof"
-	"sync"
-	"unsafe"
+
+	//"sync"
 
 	"github.com/stanford-esrg/lzr"
 )
@@ -66,20 +67,20 @@ func LZRMain() {
 	}()
 
 	// print interesting debug values
-	go func() {
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
+	// go func() {
+	// 	ticker := time.NewTicker(30 * time.Second)
+	// 	defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
-				fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
-				fmt.Fprintln(os.Stderr, "Size of Map:", unsafe.Sizeof(ipMeta))
-				fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
-			}
-		}
-	}()
+	// 	for {
+	// 		select {
+	// 		case <-ticker.C:
+	// 			fmt.Fprintln(os.Stderr, "length of writingQueue:", len(writingQueue))
+	// 			fmt.Fprintln(os.Stderr, "Processing:", ipMeta.Count())
+	// 			fmt.Fprintln(os.Stderr, "Size of Map:", unsafe.Sizeof(ipMeta))
+	// 			fmt.Fprintln(os.Stderr, "length of timeoutQueue:", len(timeoutQueue))
+	// 		}
+	// 	}
+	// }()
 
 	//start all workers
 
